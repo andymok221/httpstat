@@ -40,22 +40,23 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 }
 
 // Size writer.
-type sizeWriter int
+type sizeWriter []byte
 
 // Write implementation.
 func (w *sizeWriter) Write(b []byte) (int, error) {
-	*w += sizeWriter(len(b))
+	*w = append(*w, b...)
 	return len(b), nil
 }
 
 // Size of writes.
 func (w sizeWriter) Size() int {
-	return int(w)
+	return len(w)
 }
 
 // Response interface.
 type Response interface {
 	Status() int
+	Body() []byte
 	Redirects() int
 	TLS() bool
 	Header() http.Header
@@ -100,7 +101,7 @@ type response struct {
 	traces     []Trace
 	headerSize int
 	header     http.Header
-	bodySize   sizeWriter
+	body       sizeWriter
 }
 
 // Stats returns a struct of stats.
@@ -153,9 +154,13 @@ func (r *response) Redirects() int {
 	return len(r.traces) - 1
 }
 
+func (r *response) Body() []byte {
+	return r.body
+}
+
 // BodySize implementation.
 func (r *response) BodySize() int {
-	return int(r.bodySize)
+	return len(r.body)
 }
 
 // HeaderSize implementation.
@@ -249,7 +254,7 @@ func RequestWithClient(client *http.Client, method, uri string, header http.Head
 
 	out.status = res.StatusCode
 
-	if _, err := io.Copy(&out.bodySize, res.Body); err != nil {
+	if _, err := io.Copy(&out.body, res.Body); err != nil {
 		return nil, err
 	}
 

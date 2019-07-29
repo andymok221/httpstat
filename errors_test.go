@@ -6,9 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andymok221/httpstat"
 	"github.com/tj/assert"
-
-	"github.com/apex/httpstat"
 )
 
 func TestResponse_errors(t *testing.T) {
